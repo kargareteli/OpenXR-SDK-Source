@@ -601,13 +601,8 @@ void RuntimeManifestFile::CreateIfValid(const Json::Value &root_node, const std:
     // global library path.
     if (lib_path.find('\\') != std::string::npos || lib_path.find('/') != std::string::npos) {
         // If the library_path is an absolute path, just use that if it exists
-        if (FileSysUtilsIsAbsolutePath(lib_path)) {
-            if (!FileSysUtilsPathExists(lib_path)) {
-                error_ss << filename << " library " << lib_path << " does not appear to exist";
-                LoaderLogger::LogErrorMessage("", error_ss.str());
-                return;
-            }
-        } else {
+        // Otherwise, treat the library path as a relative path based on the JSON file.
+        if (!FileSysUtilsIsAbsolutePath(lib_path)) {
             // Otherwise, treat the library path as a relative path based on the JSON file.
             std::string canonical_path;
             std::string combined_path;
@@ -618,8 +613,8 @@ void RuntimeManifestFile::CreateIfValid(const Json::Value &root_node, const std:
                 canonical_path = filename;
             }
             if (!FileSysUtilsGetParentPath(canonical_path, file_parent) ||
-                !FileSysUtilsCombinePaths(file_parent, lib_path, combined_path) || !FileSysUtilsPathExists(combined_path)) {
-                error_ss << filename << " library " << combined_path << " does not appear to exist";
+                    !FileSysUtilsCombinePaths(file_parent, lib_path, combined_path)) {
+                error_ss << filename << " filesystem operations failed for path  " << canonical_path;
                 LoaderLogger::LogErrorMessage("", error_ss.str());
                 return;
             }
